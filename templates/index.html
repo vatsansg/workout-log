@@ -1,0 +1,186 @@
+{% extends "layout.html" %}
+
+{% block content %}
+<section class="grid two-column">
+    <article class="panel card-glow">
+        <div class="panel-header">
+            <h2>Quick Log</h2>
+            <p>Add a workout entry in seconds.</p>
+        </div>
+        <form action="{{ url_for('log_exercise') }}" method="post" class="form-stack">
+            <label>
+                Exercise
+                <input type="text" name="exercise" placeholder="e.g. Bench Press" required />
+            </label>
+            <div class="field-row">
+                <label>
+                    Sets
+                    <input type="number" name="sets" min="1" value="3" required />
+                </label>
+                <label>
+                    Reps
+                    <input type="number" name="reps" min="1" value="8" required />
+                </label>
+            </div>
+            <label>
+                Weight
+                <input type="number" step="0.5" name="weight" value="0" />
+                <span class="help-text">0 = bodyweight</span>
+            </label>
+            <label>
+                Notes
+                <input type="text" name="notes" placeholder="Optional details" />
+            </label>
+            <button type="submit" class="button button-primary">Log Workout</button>
+        </form>
+    </article>
+
+    <article class="panel card-glow stats-panel">
+        <div class="panel-header">
+            <h2>Today's Snapshot</h2>
+            <p>Review recent activity and stay on track.</p>
+        </div>
+        <div class="stats-grid">
+            <div class="stat-card">
+                <span class="stat-label">Recent entries</span>
+                <strong>{{ total }}</strong>
+            </div>
+            <div class="stat-card">
+                <span class="stat-label">Exercises tracked</span>
+                <strong>{{ exercises|length }}</strong>
+            </div>
+            <div class="stat-card">
+                <span class="stat-label">Total volume</span>
+                <strong>{{ total_volume|round(0, 'floor') }}</strong>
+            </div>
+            <div class="stat-card">
+                <span class="stat-label">Today</span>
+                <strong>{{ today|length }}</strong>
+            </div>
+        </div>
+
+        <section class="panel card-glow chart-panel">
+            <div class="panel-header">
+                <h2>Volume Trend</h2>
+                <p>Last 7 days of workout volume.</p>
+            </div>
+            {% if volume_trend.path %}
+            <div class="trend-chart">
+                <svg viewBox="0 0 600 140" class="trend-svg" aria-label="Volume trend chart">
+                    <defs>
+                        <linearGradient id="trendFill" x1="0" x2="0" y1="0" y2="1">
+                            <stop offset="0%" stop-color="rgba(60, 130, 255, 0.35)" />
+                            <stop offset="100%" stop-color="rgba(60, 130, 255, 0.05)" />
+                        </linearGradient>
+                    </defs>
+                    <polyline points="{{ volume_trend.path }}" fill="none" stroke="#7ee0ff" stroke-width="3" stroke-linecap="round" />
+                    <polygon points="{{ volume_trend.path }} 598,140 18,140" fill="url(#trendFill)" opacity="0.8" />
+                    <g stroke="rgba(255,255,255,0.08)" stroke-width="1">
+                        <line x1="18" y1="30" x2="582" y2="30" />
+                        <line x1="18" y1="70" x2="582" y2="70" />
+                        <line x1="18" y1="110" x2="582" y2="110" />
+                    </g>
+                    {% for label in volume_trend.labels %}
+                    <text x="{{ 18 + loop.index0 * 80 }}" y="136" fill="#9cb3ff" font-size="10" text-anchor="middle">{{ label }}</text>
+                    {% endfor %}
+                </svg>
+            </div>
+            {% else %}
+            <p class="muted">No volume data yet. Log workouts to view your trend.</p>
+            {% endif %}
+        </section>
+
+        <div class="streak-section">
+            <div class="streak-heading">
+                <div>
+                    <h3>Daily exercise streaks</h3>
+                    <p>See how many days in a row each movement has been logged.</p>
+                </div>
+            </div>
+            {% if streaks %}
+            <ol class="streak-list">
+                {% for exercise, streak in streaks[:4] %}
+                <li>
+                    <span>{{ exercise }}</span>
+                    <strong>{{ streak }}d</strong>
+                </li>
+                {% endfor %}
+            </ol>
+            {% else %}
+            <p class="muted">No streaks yet. Start logging workouts to build consistency.</p>
+            {% endif %}
+        </div>
+
+        {% if today %}
+        <div class="table-section">
+            <h3>Today</h3>
+            <div class="scroll-table">
+                <table>
+                    <thead>
+                        <tr><th>Date</th><th>Exercise</th><th>Sets</th><th>Reps</th><th>Weight</th></tr>
+                    </thead>
+                    <tbody>
+                        {% for row in today %}
+                        <tr>
+                            <td>{{ row[1] }}</td>
+                            <td>{{ row[2] }}</td>
+                            <td>{{ row[3] }}</td>
+                            <td>{{ row[4] }}</td>
+                            <td>{{ fmt_weight(row[5]) }}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+        {% else %}
+            <p class="muted">No workouts logged for today yet.</p>
+        {% endif %}
+    </article>
+</section>
+
+<section class="panel card-glow full-width">
+    <div class="panel-header">
+        <h2>Recent Workouts</h2>
+        <p>Last 50 sessions at a glance.</p>
+    </div>
+    {% if recent %}
+    <div class="scroll-table">
+        <table>
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>Date</th>
+                    <th>Exercise</th>
+                    <th>Sets</th>
+                    <th>Reps</th>
+                    <th>Weight</th>
+                    <th>Notes</th>
+                    <th>Action</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for row in recent %}
+                <tr>
+                    <td>{{ row[0] }}</td>
+                    <td>{{ row[1] }}</td>
+                    <td>{{ row[2] }}</td>
+                    <td>{{ row[3] }}</td>
+                    <td>{{ row[4] }}</td>
+                    <td>{{ fmt_weight(row[5]) }}</td>
+                    <td>{{ row[6] or "—" }}</td>
+                    <td>
+                        <form action="{{ url_for('delete_entry', workout_id=row[0]) }}" method="post" class="inline-form">
+                            <button type="submit" class="button button-ghost">Delete</button>
+                        </form>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% else %}
+        <p class="muted">No workouts logged yet. Start by logging your first exercise above.</p>
+    {% endif %}
+</section>
+{% endblock %}

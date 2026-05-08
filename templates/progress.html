@@ -1,0 +1,70 @@
+{% extends "layout.html" %}
+
+{% block content %}
+<section class="panel card-glow full-width">
+    <div class="panel-header">
+        <h2>Track Progress</h2>
+        <p>Search by exercise name to review history and compare performance.</p>
+    </div>
+    <form action="{{ url_for('progress') }}" method="post" class="form-stack">
+        <label>
+            Enter exercise name
+            <input type="text" name="exercise" value="{{ exercise_query }}" placeholder="e.g. Squat" required />
+        </label>
+        <button type="submit" class="button button-primary">Search History</button>
+    </form>
+
+    {% if history %}
+    <div class="table-section">
+        <h3>History for “{{ history[0][2] }}”</h3>
+        <div class="scroll-table">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Date</th>
+                        <th>Sets</th>
+                        <th>Reps</th>
+                        <th>Weight</th>
+                        <th>Volume</th>
+                        <th>Notes</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for row in history %}
+                    <tr>
+                        <td>{{ row[1] }}</td>
+                        <td>{{ row[3] }}</td>
+                        <td>{{ row[4] }}</td>
+                        <td>{{ fmt_weight(row[5]) }}</td>
+                        <td>{{ (row[3] * row[4] * (row[5] if row[5] else 1)) | int }}</td>
+                        <td>{{ row[6] or "—" }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    {% if summary %}
+    <div class="summary-grid">
+        <div class="summary-card">
+            <span>First recorded</span>
+            <strong>{{ summary.first_date }}</strong>
+            <small>{{ summary.first_sets }}×{{ summary.first_reps }} @ {{ summary.first_weight }}</small>
+        </div>
+        <div class="summary-card">
+            <span>Latest recorded</span>
+            <strong>{{ summary.latest_date }}</strong>
+            <small>{{ summary.latest_sets }}×{{ summary.latest_reps }} @ {{ summary.latest_weight }}</small>
+        </div>
+        {% if summary.weight_change is not none %}
+        <div class="summary-card {{ summary.weight_change_class }}">
+            <span>Weight change</span>
+            <strong>{{ summary.weight_change }}</strong>
+        </div>
+        {% endif %}
+    </div>
+    {% endif %}
+    {% endif %}
+</section>
+{% endblock %}

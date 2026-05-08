@@ -1,0 +1,42 @@
+{% extends "layout.html" %}
+
+{% block content %}
+<section class="panel card-glow full-width">
+    <div class="panel-header">
+        <h2>All Workouts</h2>
+        <p>Browse the latest 200 entries from your workout log.</p>
+    </div>
+    {% if workouts %}
+    <div class="scroll-table">
+        <table>
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>Date</th>
+                    <th>Exercise</th>
+                    <th>Sets</th>
+                    <th>Reps</th>
+                    <th>Weight</th>
+                    <th>Notes</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for row in workouts %}
+                <tr>
+                    <td>{{ row[0] }}</td>
+                    <td>{{ row[1] }}</td>
+                    <td>{{ row[2] }}</td>
+                    <td>{{ row[3] }}</td>
+                    <td>{{ row[4] }}</td>
+                    <td>{{ fmt_weight(row[5]) }}</td>
+                    <td>{{ row[6] or "—" }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% else %}
+        <p class="muted">No workout entries found yet.</p>
+    {% endif %}
+</section>
+{% endblock %}
